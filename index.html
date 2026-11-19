@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Personal Hub & Finance Tracker</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <style>
+    /* Custom scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+
+  <!-- TOP HEADER -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-600/30">
+          <i data-lucide="wallet" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-lg leading-tight">Personal Command Hub</h1>
+          <p class="text-xs text-slate-400">Finance, Wishlist, Jobs & Schedules</p>
+        </div>
+      </div>
+
+      <!-- Quick Stats Header Bar & Data Controls -->
+      <div class="flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-6 text-sm bg-slate-950/60 px-4 py-2 rounded-xl border border-slate-800">
+          <div>
+            <span class="text-xs text-slate-400 block">Current Balance</span>
+            <button onclick="editBalance()" id="header-balance" class="font-bold text-emerald-400 hover:underline cursor-pointer">$0.00</button>
+          </div>
+          <div class="h-8 w-px bg-slate-800"></div>
+          <div>
+            <span class="text-xs text-slate-400 block">Pending Income</span>
+            <span id="header-pending" class="font-bold text-indigo-400">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Export & Import Controls -->
+        <div class="flex items-center gap-2">
+          <button onclick="exportData()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-all">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Backup
+          </button>
+          <label class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl text-xs font-medium flex items-center gap-1.5 cursor-pointer transition-all">
+            <i data-lucide="upload" class="w-3.5 h-3.5"></i> Restore
+            <input type="file" id="import-file" accept=".json" onchange="importData(event)" class="hidden">
+          </label>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 py-6 flex-1 w-full flex flex-col md:flex-row gap-6">
+
+    <!-- NAVIGATION SIDEBAR -->
+    <nav class="md:w-64 flex flex-row md:flex-col gap-2 overflow-x-auto pb-2 md:pb-0 shrink-0">
+      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all bg-indigo-600 text-white">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+      </button>
+      <button onclick="switchTab('wishlist')" id="nav-wishlist" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-400 hover:bg-slate-900 hover:text-slate-200">
+        <i data-lucide="shopping-bag" class="w-5 h-5"></i> Wishlist
+      </button>
+      <button onclick="switchTab('jobs')" id="nav-jobs" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-400 hover:bg-slate-900 hover:text-slate-200">
+        <i data-lucide="briefcase" class="w-5 h-5"></i> Jobs & Applications
+      </button>
+      <button onclick="switchTab('commissions')" id="nav-commissions" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-400 hover:bg-slate-900 hover:text-slate-200">
+        <i data-lucide="file-text" class="w-5 h-5"></i> Commissions & Client Work
+      </button>
+      <button onclick="switchTab('selling')" id="nav-selling" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-400 hover:bg-slate-900 hover:text-slate-200">
+        <i data-lucide="tag" class="w-5 h-5"></i> Things to Sell
+      </button>
+      <button onclick="switchTab('schedule')" id="nav-schedule" class="nav-btn flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all text-slate-400 hover:bg-slate-900 hover:text-slate-200">
+        <i data-lucide="calendar" class="w-5 h-5"></i> Schedule & Deadlines
+      </button>
+    </nav>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 min-w-0">
+
+      <!-- TAB: DASHBOARD -->
+      <section id="tab-dashboard" class="tab-content space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Balance Card -->
+          <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
+            <div class="flex items-center justify-between text-slate-400 mb-2">
+              <span class="text-sm font-medium">Available Cash</span>
+              <button onclick="editBalance()" class="text-xs text-indigo-400 hover:underline">Edit Balance</button>
+            </div>
+            <div id="dash-balance" onclick="editBalance()" class="text-3xl font-extrabold text-emerald-400 cursor-pointer hover:opacity-80">$0.00</div>
+            <p class="text-xs text-slate-500 mt-2">Click amount to update balance</p>
+          </div>
+
+          <!-- Pending Income Card -->
+          <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
+            <div class="flex items-center justify-between text-slate-400 mb-2">
+              <span class="text-sm font-medium">Pending Commissions</span>
+              <i data-lucide="clock" class="w-5 h-5 text-indigo-400"></i>
+            </div>
+            <div id="dash-commissions" class="text-3xl font-extrabold text-indigo-400">$0.00</div>
+            <p class="text-xs text-slate-500 mt-2">Unpaid client orders</p>
+          </div>
+
+          <!-- Potential Sales Card -->
+          <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
+            <div class="flex items-center justify-between text-slate-400 mb-2">
+              <span class="text-sm font-medium">Inventory Value</span>
+              <i data-lucide="tag" class="w-5 h-5 text-amber-400"></i>
+            </div>
+            <div id="dash-inventory" class="text-3xl font-extrabold text-amber-400">$0.00</div>
+            <p class="text-xs text-slate-500 mt-2">Items available to sell</p>
+          </div>
+        </div>
+
+        <!-- Recent Activity Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Upcoming Deadlines Preview -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+            <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+              <i data-lucide="calendar" class="w-5 h-5 text-indigo-400"></i>
+              Upcoming Paydays & Deadlines
+            </h3>
+            <div id="dash-upcoming-list" class="space-y-3 text-sm">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Wishlist Target Preview -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+            <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+              <i data-lucide="shopping-bag" class="w-5 h-5 text-rose-400"></i>
+              Top Priority Wishlist
+            </h3>
+            <div id="dash-wishlist-list" class="space-y-3 text-sm">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: WISHLIST -->
+      <section id="tab-wishlist" class="tab-content hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold">Wishlist & Products to Buy</h2>
+          <button onclick="toggleModal('wishlist-modal')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add Product
+          </button>
+        </div>
+        <div id="wishlist-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- TAB: JOBS -->
+      <section id="tab-jobs" class="tab-content hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold">Job Listings & Applications</h2>
+          <button onclick="toggleModal('job-modal')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add Job
+          </button>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="p-4">Role & Company</th>
+                <th class="p-4">Pay Range</th>
+                <th class="p-4">Status</th>
+                <th class="p-4">Link</th>
+                <th class="p-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="jobs-table-body" class="divide-y divide-slate-800">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB: COMMISSIONS -->
+      <section id="tab-commissions" class="tab-content hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold">Commissions & Client Orders</h2>
+          <button onclick="toggleModal('commission-modal')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> New Order
+          </button>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-950 text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="p-4">Client / Order</th>
+                <th class="p-4">Price</th>
+                <th class="p-4">Deadline</th>
+                <th class="p-4">Payment Status</th>
+                <th class="p-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="commissions-table-body" class="divide-y divide-slate-800">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB: SELLING -->
+      <section id="tab-selling" class="tab-content hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold">Things to Sell</h2>
+          <button onclick="toggleModal('selling-modal')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add Item
+          </button>
+        </div>
+        <div id="selling-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- TAB: SCHEDULE -->
+      <section id="tab-schedule" class="tab-content hidden space-y-6">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-bold">Schedule & Deadlines</h2>
+          <button onclick="toggleModal('schedule-modal')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add Deadline / Payday
+          </button>
+        </div>
+        <div id="schedule-list" class="space-y-3">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- Wishlist Modal -->
+  <div id="wishlist-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md space-y-4">
+      <h3 class="text-lg font-bold">Add Wishlist Item</h3>
+      <form onsubmit="handleAddWishlist(event)" class="space-y-3">
+        <input type="text" id="wish-title" placeholder="Item Name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <input type="number" step="0.01" id="wish-price" placeholder="Price ($)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <input type="url" id="wish-image" placeholder="Image URL (optional)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <input type="url" id="wish-link" placeholder="Purchase Link (optional)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="toggleModal('wishlist-modal')" class="px-4 py-2 text-sm text-slate-400 hover:text-white">Cancel</button>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Job Modal -->
+  <div id="job-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md space-y-4">
+      <h3 class="text-lg font-bold">Add Job Application</h3>
+      <form onsubmit="handleAddJob(event)" class="space-y-3">
+        <input type="text" id="job-title" placeholder="Job Title" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <input type="text" id="job-company" placeholder="Company Name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <input type="text" id="job-pay" placeholder="Pay / Salary (e.g. $25/hr)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <select id="job-status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+          <option value="Wishlist">Wishlist / To Apply</option>
+          <option value="Applied">Applied</option>
+          <option value="Interviewing">Interviewing</option>
+          <option value="Offered">Offered</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+        <input type="url" id="job-link" placeholder="Job Listing URL" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="toggleModal('job-modal')" class="px-4 py-2 text-sm text-slate-400 hover:text-white">Cancel</button>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium">Save Job</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Commission Modal -->
+  <div id="commission-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md space-y-4">
+      <h3 class="text-lg font-bold">Add Commission Order</h3>
+      <form onsubmit="handleAddCommission(event)" class="space-y-3">
+        <input type="text" id="comm-client" placeholder="Client / Project Title" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <input type="number" step="0.01" id="comm-price" placeholder="Price ($)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <input type="date" id="comm-date" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <select id="comm-status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+          <option value="Unpaid">Unpaid</option>
+          <option value="Deposit Paid">Deposit Paid</option>
+          <option value="Fully Paid">Fully Paid</option>
+        </select>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="toggleModal('commission-modal')" class="px-4 py-2 text-sm text-slate-400 hover:text-white">Cancel</button>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium">Save Order</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Selling Modal -->
+  <div id="selling-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md space-y-4">
+      <h3 class="text-lg font-bold">Add Item to Sell</h3>
+      <form onsubmit="handleAddSelling(event)" class="space-y-3">
+        <input type="text" id="sell-title" placeholder="Item Name" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <input type="number" step="0.01" id="sell-price" placeholder="Asking Price ($)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <input type="text" id="sell-platform" placeholder="Platform (e.g. eBay, Marketplace)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <select id="sell-status" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+          <option value="Draft">Draft / Not Listed</option>
+          <option value="Listed">Listed</option>
+          <option value="Sold">Sold</option>
+        </select>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="toggleModal('selling-modal')" class="px-4 py-2 text-sm text-slate-400 hover:text-white">Cancel</button>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Schedule Modal -->
+  <div id="schedule-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-md space-y-4">
+      <h3 class="text-lg font-bold">Add Schedule Event</h3>
+      <form onsubmit="handleAddSchedule(event)" class="space-y-3">
+        <input type="text" id="sched-title" placeholder="Title (e.g. Payday, Work Deadline)" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <input type="date" id="sched-date" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+        <select id="sched-type" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-indigo-500">
+          <option value="Payday">Payday</option>
+          <option value="Deadline">Deadline</option>
+          <option value="Reminder">Reminder</option>
+        </select>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="toggleModal('schedule-modal')" class="px-4 py-2 text-sm text-slate-400 hover:text-white">Cancel</button>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-sm font-medium">Save Event</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    const STORAGE_KEY = 'personal_hub_tracker_data';
+
+    // INITIAL STATE
+    let state = {
+      balance: 0.00,
+      wishlist: [],
+      jobs: [],
+      commissions: [],
+      selling: [],
+      schedule: []
+    };
+
+    // LOAD SAVED DATA FROM LOCAL STORAGE
+    function loadState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          state = JSON.parse(saved);
+        } catch (e) {
+          console.error("Failed to load saved state", e);
+        }
+      }
+    }
+
+    // SAVE CURRENT STATE TO LOCAL STORAGE
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    // EXPORT DATA TO JSON FILE
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `hub_backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    // IMPORT DATA FROM JSON FILE
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedState = JSON.parse(e.target.result);
+          if (importedState && typeof importedState === 'object') {
+            state = importedState;
+            saveState();
+            render();
+            alert("Data imported successfully!");
+          }
+        } catch (err) {
+          alert("Invalid JSON file format.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // EDIT BALANCE
+    function editBalance() {
+      const input = prompt("Enter your current available balance ($):", state.balance);
+      if (input !== null) {
+        const val = parseFloat(input);
+        if (!isNaN(val)) {
+          state.balance = val;
+          saveState();
+          render();
+        }
+      }
+    }
+
+    // TAB SWITCHING LOGIC
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-btn').forEach(el => {
+        el.classList.remove('bg-indigo-600', 'text-white');
+        el.classList.add('text-slate-400');
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const activeNav = document.getElementById(`nav-${tabId}`);
+      activeNav.classList.add('bg-indigo-600', 'text-white');
+      activeNav.classList.remove('text-slate-400');
+    }
+
+    // MODAL TOGGLER
+    function toggleModal(modalId) {
+      const modal = document.getElementById(modalId);
+      modal.classList.toggle('hidden');
+    }
+
+    // FORMAT CURRENCY
+    function formatUSD(num) {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num || 0);
+    }
+
+    // RENDER APP STATE TO UI
+    function render() {
+      document.getElementById('header-balance').innerText = formatUSD(state.balance);
+      document.getElementById('dash-balance').innerText = formatUSD(state.balance);
+
+      const pendingCommissions = state.commissions
+        .filter(c => c.status !== 'Fully Paid')
+        .reduce((sum, c) => sum + c.price, 0);
+      document.getElementById('header-pending').innerText = formatUSD(pendingCommissions);
+      document.getElementById('dash-commissions').innerText = formatUSD(pendingCommissions);
+
+      const inventoryVal = state.selling
+        .filter(s => s.status !== 'Sold')
+        .reduce((sum, s) => sum + s.price, 0);
+      document.getElementById('dash-inventory').innerText = formatUSD(inventoryVal);
+
+      // Wishlist Grid
+      const wishlistGrid = document.getElementById('wishlist-grid');
+      if (state.wishlist.length === 0) {
+        wishlistGrid.innerHTML = `<p class="text-sm text-slate-500 col-span-full">No products in wishlist yet. Click "Add Product" to create one.</p>`;
+      } else {
+        wishlistGrid.innerHTML = state.wishlist.map(item => `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex gap-4 items-center">
+            <img src="${item.image || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=150&auto=format&fit=crop&q=60'}" class="w-16 h-16 rounded-xl object-cover bg-slate-950 shrink-0">
+            <div class="flex-1 min-w-0">
+              <h4 class="font-semibold text-sm truncate">${item.title}</h4>
+              <div class="text-emerald-400 font-bold text-sm mt-1">${formatUSD(item.price)}</div>
+              ${item.link ? `<a href="${item.link}" target="_blank" class="text-xs text-indigo-400 hover:underline flex items-center gap-1 mt-1"><i data-lucide="external-link" class="w-3 h-3"></i> View Link</a>` : ''}
+            </div>
+            <button onclick="deleteItem('wishlist', ${item.id})" class="text-slate-500 hover:text-rose-400 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>
+        `).join('');
+      }
+
+      // Jobs Table
+      const jobsBody = document.getElementById('jobs-table-body');
+      if (state.jobs.length === 0) {
+        jobsBody.innerHTML = `<tr><td colspan="5" class="p-4 text-slate-500 text-center">No job applications added yet.</td></tr>`;
+      } else {
+        jobsBody.innerHTML = state.jobs.map(job => `
+          <tr>
+            <td class="p-4 font-medium">${job.title} <span class="text-xs text-slate-400 block">${job.company}</span></td>
+            <td class="p-4 text-slate-300">${job.pay || 'N/A'}</td>
+            <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">${job.status}</span></td>
+            <td class="p-4">${job.link ? `<a href="${job.link}" target="_blank" class="text-indigo-400 hover:underline"><i data-lucide="external-link" class="w-4 h-4"></i></a>` : '-'}</td>
+            <td class="p-4 text-right"><button onclick="deleteItem('jobs', ${job.id})" class="text-slate-500 hover:text-rose-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+          </tr>
+        `).join('');
+      }
+
+      // Commissions Table
+      const commBody = document.getElementById('commissions-table-body');
+      if (state.commissions.length === 0) {
+        commBody.innerHTML = `<tr><td colspan="5" class="p-4 text-slate-500 text-center">No commission orders recorded yet.</td></tr>`;
+      } else {
+        commBody.innerHTML = state.commissions.map(c => `
+          <tr>
+            <td class="p-4 font-medium">${c.client}</td>
+            <td class="p-4 font-bold text-emerald-400">${formatUSD(c.price)}</td>
+            <td class="p-4 text-slate-400 text-xs">${c.date}</td>
+            <td class="p-4"><span class="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">${c.status}</span></td>
+            <td class="p-4 text-right"><button onclick="deleteItem('commissions', ${c.id})" class="text-slate-500 hover:text-rose-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+          </tr>
+        `).join('');
+      }
+
+      // Selling Grid
+      const sellingGrid = document.getElementById('selling-grid');
+      if (state.selling.length === 0) {
+        sellingGrid.innerHTML = `<p class="text-sm text-slate-500 col-span-full">No items added to sell.</p>`;
+      } else {
+        sellingGrid.innerHTML = state.selling.map(s => `
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex justify-between items-center">
+            <div>
+              <h4 class="font-semibold text-sm">${s.title}</h4>
+              <div class="text-amber-400 font-bold text-sm mt-0.5">${formatUSD(s.price)}</div>
+              <div class="text-xs text-slate-400 mt-1">${s.platform || 'Unlisted'} • <span class="text-indigo-400">${s.status}</span></div>
+            </div>
+            <button onclick="deleteItem('selling', ${s.id})" class="text-slate-500 hover:text-rose-400 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>
+        `).join('');
+      }
+
+      // Schedule List
+      const scheduleList = document.getElementById('schedule-list');
+      if (state.schedule.length === 0) {
+        scheduleList.innerHTML = `<p class="text-sm text-slate-500">No events or paydays on your schedule.</p>`;
+      } else {
+        scheduleList.innerHTML = state.schedule.map(s => `
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 rounded-xl ${s.type === 'Payday' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}">
+                <i data-lucide="${s.type === 'Payday' ? 'dollar-sign' : 'clock'}" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h4 class="font-medium text-sm">${s.title}</h4>
+                <p class="text-xs text-slate-400">${s.date} • ${s.type}</p>
+              </div>
+            </div>
+            <button onclick="deleteItem('schedule', ${s.id})" class="text-slate-500 hover:text-rose-400 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>
+        `).join('');
+      }
+
+      // Dashboard Previews
+      const dashUpcoming = document.getElementById('dash-upcoming-list');
+      if (state.schedule.length === 0) {
+        dashUpcoming.innerHTML = `<p class="text-xs text-slate-500">No upcoming events yet.</p>`;
+      } else {
+        dashUpcoming.innerHTML = state.schedule.slice(0, 3).map(s => `
+          <div class="flex items-center justify-between p-2 rounded-lg bg-slate-950/50">
+            <span class="font-medium">${s.title}</span>
+            <span class="text-xs text-indigo-400 font-mono">${s.date}</span>
+          </div>
+        `).join('');
+      }
+
+      const dashWishlist = document.getElementById('dash-wishlist-list');
+      if (state.wishlist.length === 0) {
+        dashWishlist.innerHTML = `<p class="text-xs text-slate-500">No wishlist items added yet.</p>`;
+      } else {
+        dashWishlist.innerHTML = state.wishlist.slice(0, 3).map(w => `
+          <div class="flex items-center justify-between p-2 rounded-lg bg-slate-950/50">
+            <span class="font-medium truncate max-w-[200px]">${w.title}</span>
+            <span class="text-xs text-emerald-400 font-bold">${formatUSD(w.price)}</span>
+          </div>
+        `).join('');
+      }
+
+      lucide.createIcons();
+    }
+
+    // FORM HANDLERS
+    function handleAddWishlist(e) {
+      e.preventDefault();
+      state.wishlist.push({
+        id: Date.now(),
+        title: document.getElementById('wish-title').value,
+        price: parseFloat(document.getElementById('wish-price').value),
+        image: document.getElementById('wish-image').value,
+        link: document.getElementById('wish-link').value
+      });
+      saveState();
+      toggleModal('wishlist-modal');
+      e.target.reset();
+      render();
+    }
+
+    function handleAddJob(e) {
+      e.preventDefault();
+      state.jobs.push({
+        id: Date.now(),
+        title: document.getElementById('job-title').value,
+        company: document.getElementById('job-company').value,
+        pay: document.getElementById('job-pay').value,
+        status: document.getElementById('job-status').value,
+        link: document.getElementById('job-link').value
+      });
+      saveState();
+      toggleModal('job-modal');
+      e.target.reset();
+      render();
+    }
+
+    function handleAddCommission(e) {
+      e.preventDefault();
+      state.commissions.push({
+        id: Date.now(),
+        client: document.getElementById('comm-client').value,
+        price: parseFloat(document.getElementById('comm-price').value),
+        date: document.getElementById('comm-date').value,
+        status: document.getElementById('comm-status').value
+      });
+      saveState();
+      toggleModal('commission-modal');
+      e.target.reset();
+      render();
+    }
+
+    function handleAddSelling(e) {
+      e.preventDefault();
+      state.selling.push({
+        id: Date.now(),
+        title: document.getElementById('sell-title').value,
+        price: parseFloat(document.getElementById('sell-price').value),
+        platform: document.getElementById('sell-platform').value,
+        status: document.getElementById('sell-status').value
+      });
+      saveState();
+      toggleModal('selling-modal');
+      e.target.reset();
+      render();
+    }
+
+    function handleAddSchedule(e) {
+      e.preventDefault();
+      state.schedule.push({
+        id: Date.now(),
+        title: document.getElementById('sched-title').value,
+        date: document.getElementById('sched-date').value,
+        type: document.getElementById('sched-type').value
+      });
+      saveState();
+      toggleModal('schedule-modal');
+      e.target.reset();
+      render();
+    }
+
+    // DELETE ITEM HANDLER
+    function deleteItem(collection, id) {
+      state[collection] = state[collection].filter(item => item.id !== id);
+      saveState();
+      render();
+    }
+
+    // INITIAL LOAD & RENDER
+    loadState();
+    render();
+  </script>
+</body>
+</html>
